@@ -24,140 +24,142 @@ namespace Direct2DMap;
 
 public class Map : Control
 {
-    private RenderTargetBitmap RenderTarget;
-    private ISkiaDrawingContextImpl SkiaContext;
-    private SKPaint SKBrush;
+    private int RenderWidth => (int)Bounds.Width;
+    private int RenderHeight => (int)Bounds.Height;
 
-    private static int _downloadCounter;
-    private static readonly DirectoryInfo _cacheDir = new("Cache");
+    private RenderTargetBitmap _rt;
+    private ISkiaDrawingContextImpl _skContext;
+
+    private static readonly DirectoryInfo CacheDir = new("Cache");
     private static readonly Dictionary<string, SKImage> CachedImages = new();
 
-    private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-    private MapPoint mapPoint = MapPoint.Zero;
-    private int zoom = 4;
+    private static readonly HttpClient HttpClient = new();
+
+    private readonly SemaphoreSlim _updateSemaphore = new(1, 1);
+
+    private MapPoint _centerPoint = new MapPoint(37.617187, 55.755508);
+    private int _zoom = 8;
+
+    private bool _isDragging = false;
+    private Point _prevDragPos;
+
+    private Rect _mapBounds;
+    private SKPaint _whitePaint;
+
+    static Map()
+    {
+        CacheDir.Create();
+        foreach (var fileName in Directory.GetFiles(CacheDir.FullName))
+        {
+            string name = Path.GetFileName(fileName);
+            var image = SkHelper.ToSkImage(File.OpenRead(fileName));
+
+            CachedImages.Add(name, image);
+        }
+    }
 
     public Map()
     {
-        _cacheDir.Create();
-        foreach (var fileName in Directory.GetFiles(_cacheDir.FullName))
-        {
-            CachedImages.Add(Path.GetFileName(fileName), SKImage.FromBitmap(SKBitmap.Decode(File.OpenRead(fileName))));
-        }
+        BoundsProperty.Changed.AddClassHandler<Map>(ResizeMap);
 
-        SKBrush = new SKPaint();
-        SKBrush.IsAntialias = true;
-        SKBrush.Color = new SKColor(0, 0, 0);
-        SKBrush.Shader = SKShader.CreateColor(SKBrush.Color);
+        PointerPressed += PointerPressedHandler;
+        PointerMoved += PointerMoveHandler;
+        PointerReleased += PointerReleasedHandler;
+        PointerWheelChanged += PointerWheelHandler;
 
-        BoundsProperty.Changed.AddClassHandler<Map>(async (x, args) =>
-        {
-            if (Bounds.Width == 0 || Bounds.Height == 0)
-                return;
-
-            RenderTarget =
-                new RenderTargetBitmap(new PixelSize((int)Bounds.Width, (int)Bounds.Height), new Vector(96, 96));
-
-            var context = RenderTarget.CreateDrawingContext(null);
-            SkiaContext = (context as ISkiaDrawingContextImpl);
-            SkiaContext.SkCanvas.Clear(new SKColor(255, 255, 255));
-
-            await RenderMap();
-        });
-
-        PointerPressed += DrawingCanvas_PointerPressed;
-        PointerMoved += OnPointerMoved;
-        
-        PointerReleased += OnPointerReleased;
+        _whitePaint = new SKPaint();
+        _whitePaint.Color = SKColors.White;
     }
 
-    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void PointerWheelHandler(object sender, PointerWheelEventArgs e)
     {
-        isdrag = false;
+        int delta = (int)e.Delta.Y;
+
+        _zoom += delta;
+
+        RenderMap();
     }
 
-    private async void OnPointerMoved(object? sender, PointerEventArgs e)
+    private async void ResizeMap(Map map, AvaloniaPropertyChangedEventArgs args)
     {
-        if (!isdrag)
+        // Skip until we have arranged bounds
+        if (RenderWidth == 0 || RenderHeight == 0) return;
+
+        _rt = new RenderTargetBitmap(new PixelSize(RenderWidth, RenderHeight), new Vector(96, 96));
+        _skContext = (_rt.CreateDrawingContext(null) as ISkiaDrawingContextImpl)!;
+
+        await RenderMap();
+    }
+
+    private async void PointerMoveHandler(object sender, PointerEventArgs e)
+    {
+        if (!_isDragging)
             return;
 
-        var pos = Convert(e.GetPosition(this));
+        var pos = e.GetPosition(this);
 
-        var mapPos = MapHelper.WorldToTilePos(mapPoint, zoom);
+        var posDelta = PixelToTiles(pos) - PixelToTiles(_prevDragPos);
 
-        var newMapPos = new MapTilePoint(
-            mapPos.X - (pos.X - prevMousePos.X),
-            mapPos.Y - (pos.Y - prevMousePos.Y));
+        var centerPointTile = MapHelper.WorldToTilePos(_centerPoint, _zoom);
+        centerPointTile -= posDelta;
 
-        mapPoint = MapHelper.TileToWorldPos(newMapPos, zoom);
+        _centerPoint = MapHelper.TileToWorldPos(centerPointTile, _zoom);
+        _prevDragPos = pos;
 
-        prevMousePos = pos;
-        
         await RenderMap();
-
     }
 
-    private bool isdrag = false;
-    private MapTilePoint prevMousePos;
-    private async void DrawingCanvas_PointerPressed(object sender, PointerPressedEventArgs e)
+    private void PointerReleasedHandler(object sender, PointerReleasedEventArgs e)
     {
-        isdrag = true;
-        prevMousePos = Convert(e.GetPosition(this));
-        
-        //await RenderMap();
+        _isDragging = false;
     }
 
-    private MapTilePoint Convert(Point mousepos)
+    private async void PointerPressedHandler(object sender, PointerPressedEventArgs e)
     {
-        var center = mapBounds.Center;
-        var mouseX = Remap(mousepos.X, 0, Bounds.Width, mapBounds.Left, mapBounds.Right);
-        var mouseY = Remap(mousepos.Y, 0, Bounds.Height, mapBounds.Top, mapBounds.Bottom);
-        
-        return new MapTilePoint(mouseX, mouseY);
+        _prevDragPos = e.GetPosition(this);
+        _isDragging = true;
     }
 
-    public static double Remap(double value, double from1, double to1, double from2, double to2)
+    private static Point PixelToTiles(Point point)
     {
-        return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
+        return point / 256;
     }
 
-    private Rect mapBounds;
+    private CancellationTokenSource _renderCancellation;
 
     private async Task RenderMap()
     {
-        await _semaphore.WaitAsync();
+        _renderCancellation?.Cancel();
+        await _updateSemaphore.WaitAsync();
         try
         {
-            await RenderMap((int)Bounds.Width, (int)Bounds.Height);
-            InvalidateVisual();
+            _renderCancellation = new CancellationTokenSource();
+            await RenderMap(RenderWidth, RenderHeight, _renderCancellation);
         }
         finally
         {
-            _semaphore.Release();
+            _updateSemaphore.Release();
         }
-
-        //var p = e.GetPosition(this);
-        //SkiaContext?.SkCanvas.DrawCircle((float)p.X, (float)p.Y, 25, SKBrush);
     }
 
     public override void Render(DrawingContext context)
     {
-        context.DrawImage(RenderTarget,
-            new Rect(0, 0, RenderTarget.PixelSize.Width, RenderTarget.PixelSize.Height),
+        context.DrawImage(_rt,
+            new Rect(0, 0, _rt.PixelSize.Width, _rt.PixelSize.Height),
             new Rect(0, 0, Bounds.Width, Bounds.Height));
     }
 
-    public async Task RenderMap(int width, int height)
+    public async Task RenderMap(int width, int height, CancellationTokenSource token)
     {
-        await Dispatcher.UIThread.InvokeAsync((() => { SkiaContext.SkCanvas.Clear(new SKColor(255, 255, 255)); }));
-        var center = mapPoint;
+        var center = _centerPoint;
 
-        int zoomNumTiles = MapHelper.GetNumberOfTilesAtZoom(zoom);
-        var centerTilePoint = MapHelper.WorldToTilePos(center, zoom);
+        int zoomNumTiles = MapHelper.GetNumberOfTilesAtZoom(_zoom);
+        var centerTilePoint = MapHelper.WorldToTilePos(center, _zoom);
 
         // xStart = floor(center.X - width / 512)
         // yStart = floor(center.Y - height / 512)
-        // xNum = width / 256 + 1
-        // yNum = height / 256 + 1
+        // xNum = celling((width + offset) / 256)
+        // xNum = celling((height + offset) / 256)
         // xOffset = mod(center.X - width / 512, 1) * 256
         // yOffset = mod(center.Y - height / 512, 1) * 256
 
@@ -166,69 +168,99 @@ public class Map : Control
 
         var (xStart, xOffset) = ((int)Math.Floor(xs), (int)(xs % 1 * 256.0));
         var (yStart, yOffset) = ((int)Math.Floor(ys), (int)(ys % 1 * 256.0));
-        int xNum = (int)(width / 256.0) + 1;
-        int yNum = (int)(height / 256.0) + 1;
+        int xNum = (int)Math.Ceiling((width + xOffset) / 256.0);
+        int yNum = (int)Math.Ceiling((height + yOffset) / 256.0);
 
-        mapBounds = new Rect(xs, ys, width / 256.0, height / 256.0);
+        _mapBounds = new Rect(xs, ys, width / 256.0, height / 256.0);
 
         List<Task> getImageTask = new();
         for (int x = 0; x < xNum; x++)
         {
             for (int y = 0; y < yNum; y++)
             {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 int xTile = x + xStart;
                 int yTile = y + yStart;
                 int y1 = y;
                 int x1 = x;
                 getImageTask.Add(Task.Run(async () =>
                 {
-                    var image = await GetTileImage(
-                        Wrap(xTile, zoomNumTiles),
-                        Wrap(yTile, zoomNumTiles), zoom);
-
-                    // lock (graphicsLock)
-                    // {
-                    //     // graphics.DrawImage(image, new Point(
-                    //     //     x1 * 256 - xOffset,
-                    //     //     y1 * 256 - yOffset));
-                    // }
-                    await Dispatcher.UIThread.InvokeAsync((() =>
+                    int xPos = x1 * 256 - xOffset;
+                    int yPos = y1 * 256 - yOffset;
+                    int xIndex = xTile.Wrap(zoomNumTiles);
+                    int yIndex = yTile.Wrap(zoomNumTiles);
+                    await Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        SkiaContext.SkCanvas.DrawImage(image, x1 * 256 - xOffset, y1 * 256 - yOffset);
-                    }));
+                        if (!TryGetImageFromCache(xIndex, yIndex, _zoom, out var image))
+                        {
+                            _skContext.SkCanvas.DrawRect(xPos, yPos, 256, 256, _whitePaint);
+                        }
+                        else
+                        {
+                            _skContext.SkCanvas.DrawImage(image, xPos, yPos);
+                        }
+                    });
+
+                    try
+                    {
+                        // For some reason may on dictionary duplicate key?
+                        InvalidateVisual();
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
                 }));
             }
         }
 
         await Task.WhenAll(getImageTask);
-
-        // Export
-        //await using var fs = File.Create(@"C:\Users\falco\Desktop\Map.png");
-        //bitmap.Save(fs, ImageFormat.Png);
     }
 
-    private static int Wrap(int value, int by)
+    private static readonly object CacheLock = new();
+
+    private bool TryGetImageFromCache(int x, int y, int zoom, out SKImage image)
     {
-        value %= by;
-        if (value < 0)
-            value += by;
-        return value;
-    }
+        image = null;
 
-    private static readonly HttpClient HttpClient = new();
-
-    private static async Task<SKImage> GetTileImage(int x, int y, int zoom)
-    {
-        string name = $"{x}_{y}_{zoom}.png";
-        string fileName = $"{_cacheDir.FullName}/{name}";
-
-        Stream stream;
-        if (CachedImages.ContainsKey(name))
+        string name = GetTileFileName(x, y, zoom);
+        lock (CacheLock)
         {
-            return CachedImages[name];
+            if (CachedImages.ContainsKey(name))
+            {
+                image = CachedImages[name];
+                return true;
+            }
         }
 
-        _downloadCounter++;
+        RequestTile(x, y, zoom, () => RenderMap());
+        return false;
+    }
+
+    private static string GetTileFileName(int x, int y, int zoom)
+    {
+        return $"{x}_{y}_{zoom}.png";
+    }
+
+    private static readonly HashSet<string> PendingDownloads = new();
+    private static readonly object PendingDownloadsLock = new();
+
+    private static async void RequestTile(int x, int y, int zoom, Action onFinished)
+    {
+        string name = GetTileFileName(x, y, zoom);
+
+        lock (PendingDownloadsLock)
+        {
+            if (PendingDownloads.Contains(name))
+                return;
+
+            PendingDownloads.Add(name);
+        }
+
         // We have to set user agent because otherwise we will get 403 http error
         // https://stackoverflow.com/questions/46604840/403-response-with-httpclient-but-not-with-browser
         var url = $"https://tile.openstreetmap.org/{zoom}/{x}/{y}.png";
@@ -243,43 +275,33 @@ public class Map : Control
                 }
             }
         };
-        var result = await HttpClient.SendAsync(request);
-        byte[] imgByte = await result.Content.ReadAsByteArrayAsync();
 
-        stream = new MemoryStream(imgByte);
-
-        // Save to disk
-        await using var fs = File.Create(fileName);
-        await stream.CopyToAsync(fs);
-
+        // May throw on downloading and converting to SKImage
         try
         {
-            // var image = SKImage.FromBitmap(SKBitmap.Decode(stream));
-            var st = new SKMemoryStream(imgByte);
+            var result = await HttpClient.SendAsync(request);
+            var contentStream = await result.Content.ReadAsStreamAsync();
 
-            // create the codec
-            var codec = SKCodec.Create(st);
+            // // Save to disk
+            // string fileName = $"{CacheDir.FullName}/{name}";
+            // await File.WriteAllBytesAsync(fileName, await result.Content.ReadAsByteArrayAsync());
 
-            // we need a place to store the bytes
-            var bitmap = new SKBitmap(codec.Info);
+            var image = SkHelper.ToSkImage(contentStream);
+            lock (CacheLock)
+            {
+                CachedImages.Add(name, image);
+            }
 
-            // decode!
-            // result should be SKCodecResult.Success, but you may get more information
-            var res = codec.GetPixels(bitmap.Info, bitmap.GetPixels());
-
-            var image = SKImage.FromBitmap(bitmap);
-            CachedImages.Add(name, image);
-
-            return image;
+            onFinished();
         }
         catch (Exception e)
         {
-            Debug.WriteLine(e);
-            return SKImage.Create(new SKImageInfo(256, 256));
+            // ignored
+        }
+
+        lock (PendingDownloadsLock)
+        {
+            PendingDownloads.Remove(name);
         }
     }
-
-
-    // For smooth transition - Interpolate between images, or maybe using some avalonia stock
-    // stuff for that 
 }
