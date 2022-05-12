@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace AvaloniaOpenStreetMap
+namespace AvaloniaMapExample
 {
     public partial class MainWindow : Window
     {

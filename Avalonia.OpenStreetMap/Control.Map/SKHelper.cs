@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using SkiaSharp;
 
-namespace AvaloniaOpenStreetMap.Control.Map;
+namespace Avalonia.OpenStreetMap.Control.Map;
 
 public static class SkHelper
 {

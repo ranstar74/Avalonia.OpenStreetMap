@@ -4,7 +4,7 @@ using System.IO;
 using System.Net.Http;
 using SkiaSharp;
 
-namespace AvaloniaOpenStreetMap.Control.Map;
+namespace Avalonia.OpenStreetMap.Control.Map;
 
 public static class MapCache
 {

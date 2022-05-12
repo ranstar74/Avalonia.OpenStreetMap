@@ -2,7 +2,7 @@
 using System.Globalization;
 using Avalonia.Utilities;
 
-namespace AvaloniaOpenStreetMap.Control.Map;
+namespace Avalonia.OpenStreetMap.Control.Map;
 
 public class MapPoint
 {

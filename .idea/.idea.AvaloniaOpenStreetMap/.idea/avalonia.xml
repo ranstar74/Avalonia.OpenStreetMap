@@ -3,6 +3,12 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="Avalonia.MapExample/App.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
+        <entry key="Avalonia.MapExample/MainWindow.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
+        <entry key="Avalonia.OpenStreetMap/Control.Map/MapControl.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
+        <entry key="AvaloniaMapExample/App.axaml" value="AvaloniaMapExample/AvaloniaMapExample.csproj" />
+        <entry key="AvaloniaMapExample/MainWindow.axaml" value="AvaloniaMapExample/AvaloniaMapExample.csproj" />
+        <entry key="AvaloniaOpenStreetMap/App.axaml" value="AvaloniaOpenStreetMap/AvaloniaOpenStreetMap.csproj" />
         <entry key="AvaloniaOpenStreetMap/Control.Map/MapControl.axaml" value="AvaloniaOpenStreetMap/AvaloniaOpenStreetMap.csproj" />
         <entry key="AvaloniaOpenStreetMap/MainWindow.axaml" value="AvaloniaOpenStreetMap/AvaloniaOpenStreetMap.csproj" />
         <entry key="Direct2DMap/App.axaml" value="Direct2DMap/Direct2DMap.csproj" />

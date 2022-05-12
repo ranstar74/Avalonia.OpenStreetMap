@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -10,7 +9,7 @@ using Avalonia.Skia;
 using Avalonia.Threading;
 using SkiaSharp;
 
-namespace AvaloniaOpenStreetMap.Control.Map;
+namespace Avalonia.OpenStreetMap.Control.Map;
 
 public class MapLayer : global::Avalonia.Controls.Control
 {
@@ -217,6 +216,7 @@ public class MapLayer : global::Avalonia.Controls.Control
         int zoomNumTiles = MapHelper.GetNumberOfTilesAtZoom(Zoom);
         var centerTilePoint = MapHelper.WorldToTilePos(center, Zoom);
 
+        // Pseudocode:
         // xStart = floor(center.X - width / 512)
         // yStart = floor(center.Y - height / 512)
         // xNum = celling((width + offset) / 256)

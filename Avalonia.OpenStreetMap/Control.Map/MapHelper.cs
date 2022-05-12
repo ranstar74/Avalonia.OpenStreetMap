@@ -1,7 +1,6 @@
 ﻿using System;
-using Avalonia;
 
-namespace AvaloniaOpenStreetMap.Control.Map;
+namespace Avalonia.OpenStreetMap.Control.Map;
 
 public static class MapHelper
 {

@@ -1,16 +1,16 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:map1="clr-namespace:AvaloniaOpenStreetMap.Control.Map">
+        xmlns:map="clr-namespace:Avalonia.OpenStreetMap.Control.Map">
     <Design.PreviewWith>
-        <map1:MapControl />
+        <map:MapControl />
     </Design.PreviewWith>
 
-    <Style Selector="map1|MapControl">
+    <Style Selector="map|MapControl">
         <!-- Set Defaults -->
         <Setter Property="Template">
             <ControlTemplate>
                 <Panel>
-                    <map1:MapLayer x:Name="PART_MapLayer" />
+                    <map:MapLayer x:Name="PART_MapLayer" />
 
                     <!-- Toolbar -->
                     <Panel HorizontalAlignment="Right"

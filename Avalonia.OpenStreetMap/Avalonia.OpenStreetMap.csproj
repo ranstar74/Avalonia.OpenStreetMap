@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>disable</Nullable>
         <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <AssemblyName>Avalonia.OpenStreetMap</AssemblyName>
+        <RootNamespace>Avalonia.OpenStreetMap</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
         <None Remove=".gitignore" />
