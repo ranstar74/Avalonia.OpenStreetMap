@@ -10,7 +10,7 @@ using Avalonia.Skia;
 using Avalonia.Threading;
 using SkiaSharp;
 
-namespace Direct2DMap.Control.Map;
+namespace AvaloniaOpenStreetMap.Control.Map;
 
 public class MapLayer : global::Avalonia.Controls.Control
 {

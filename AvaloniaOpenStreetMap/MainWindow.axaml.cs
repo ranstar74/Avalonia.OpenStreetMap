@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Direct2DMap
+namespace AvaloniaOpenStreetMap
 {
     public partial class MainWindow : Window
     {

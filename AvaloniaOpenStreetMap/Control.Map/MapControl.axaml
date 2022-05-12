@@ -1,16 +1,16 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:map="clr-namespace:Direct2DMap.Control.Map">
+        xmlns:map1="clr-namespace:AvaloniaOpenStreetMap.Control.Map">
     <Design.PreviewWith>
-        <map:MapControl />
+        <map1:MapControl />
     </Design.PreviewWith>
 
-    <Style Selector="map|MapControl">
+    <Style Selector="map1|MapControl">
         <!-- Set Defaults -->
         <Setter Property="Template">
             <ControlTemplate>
                 <Panel>
-                    <map:MapLayer x:Name="PART_MapLayer" />
+                    <map1:MapLayer x:Name="PART_MapLayer" />
 
                     <!-- Toolbar -->
                     <Panel HorizontalAlignment="Right"
@@ -19,7 +19,7 @@
                                 CornerRadius="3"
                                 Padding="3"
                                 BoxShadow="0 0 5 1 Black"
-                                Opacity="0.7">
+                                Opacity="0.85">
                             <StackPanel Orientation="Vertical">
                                 <RepeatButton x:Name="PART_ZoomInButton"
                                               Content="+" />

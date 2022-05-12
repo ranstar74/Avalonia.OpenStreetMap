@@ -1,9 +1,7 @@
 ﻿using System;
 using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 
-namespace Direct2DMap
+namespace AvaloniaOpenStreetMap
 {
     class Program
     {

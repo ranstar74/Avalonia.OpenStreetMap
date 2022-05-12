@@ -2,7 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 
-namespace Direct2DMap.Control.Map;
+namespace AvaloniaOpenStreetMap.Control.Map;
 
 public class MapControl : TemplatedControl
 {

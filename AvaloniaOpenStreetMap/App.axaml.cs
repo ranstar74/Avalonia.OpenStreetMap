@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
-namespace Direct2DMap
+namespace AvaloniaOpenStreetMap
 {
     public partial class App : Application
     {
