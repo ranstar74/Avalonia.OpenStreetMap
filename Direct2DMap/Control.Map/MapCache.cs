@@ -4,7 +4,7 @@ using System.IO;
 using System.Net.Http;
 using SkiaSharp;
 
-namespace Direct2DMap;
+namespace Direct2DMap.Control.Map;
 
 public static class MapCache
 {

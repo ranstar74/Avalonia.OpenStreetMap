@@ -1,7 +1,4 @@
-﻿using System.IO;
-using SkiaSharp;
-
-namespace Direct2DMap;
+﻿namespace Direct2DMap.Control.Map;
 
 public static class DoubleExtensions
 {

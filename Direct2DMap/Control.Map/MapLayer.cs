@@ -1,27 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Animation.Easings;
-using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Media.Transformation;
 using Avalonia.Skia;
-using Avalonia.Styling;
 using Avalonia.Threading;
-using MapRender;
-using Microsoft.Win32.SafeHandles;
 using SkiaSharp;
 
-namespace Direct2DMap;
+namespace Direct2DMap.Control.Map;
 
-public class Map : Control
+public class MapLayer : global::Avalonia.Controls.Control
 {
     private int RenderWidth => (int)Bounds.Width;
     private int RenderHeight => (int)Bounds.Height;
@@ -58,11 +49,12 @@ public class Map : Control
 
     private readonly SKPaint _whitePaint;
 
-    public Map()
+    public MapLayer()
     {
         Zoom = 3;
+        Center = MapPoint.Zero;
 
-        BoundsProperty.Changed.AddClassHandler<Map>(ResizeMap);
+        BoundsProperty.Changed.AddClassHandler<MapLayer>(ResizeMap);
 
         PointerPressed += PointerPressedHandler;
         PointerMoved += PointerMoveHandler;
@@ -149,7 +141,7 @@ public class Map : Control
         return TilePointToScreenPoint(pointTileLocal);
     }
 
-    private async void ResizeMap(Map map, AvaloniaPropertyChangedEventArgs args)
+    private async void ResizeMap(MapLayer map, AvaloniaPropertyChangedEventArgs args)
     {
         // Skip until we have arranged bounds
         if (RenderWidth == 0 || RenderHeight == 0) return;

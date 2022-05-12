@@ -1,7 +1,7 @@
 ﻿using System;
 using Avalonia;
 
-namespace MapRender;
+namespace Direct2DMap.Control.Map;
 
 public static class MapHelper
 {

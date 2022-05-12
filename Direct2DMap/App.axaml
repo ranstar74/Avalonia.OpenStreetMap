@@ -3,5 +3,7 @@
              x:Class="Direct2DMap.App">
     <Application.Styles>
         <FluentTheme Mode="Light"/>
+        
+        <StyleInclude Source="/Control.Map/MapControl.axaml"/>
     </Application.Styles>
 </Application>

@@ -2,7 +2,7 @@
 using System.Globalization;
 using Avalonia.Utilities;
 
-namespace MapRender;
+namespace Direct2DMap.Control.Map;
 
 public class MapPoint
 {
