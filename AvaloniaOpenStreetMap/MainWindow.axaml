@@ -1,0 +1,11 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:map1="clr-namespace:AvaloniaOpenStreetMap.Control.Map"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AvaloniaOpenStreetMap.MainWindow"
+        Title="Direct2DMap">
+    <map1:MapControl Zoom="3"
+                    Center="37.617627, 55.755829" />
+</Window>

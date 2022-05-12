@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AvaloniaProject">
+    <option name="projectPerEditor">
+      <map>
+        <entry key="AvaloniaOpenStreetMap/Control.Map/MapControl.axaml" value="AvaloniaOpenStreetMap/AvaloniaOpenStreetMap.csproj" />
+        <entry key="AvaloniaOpenStreetMap/MainWindow.axaml" value="AvaloniaOpenStreetMap/AvaloniaOpenStreetMap.csproj" />
+        <entry key="Direct2DMap/App.axaml" value="Direct2DMap/Direct2DMap.csproj" />
+        <entry key="Direct2DMap/Avalonia.Control.Map/MapControl.axaml" value="Direct2DMap/Direct2DMap.csproj" />
+        <entry key="Direct2DMap/Control.Map/MapControl.axaml" value="Direct2DMap/Direct2DMap.csproj" />
+        <entry key="Direct2DMap/MainWindow.axaml" value="Direct2DMap/Direct2DMap.csproj" />
+      </map>
+    </option>
+  </component>
+</project>
