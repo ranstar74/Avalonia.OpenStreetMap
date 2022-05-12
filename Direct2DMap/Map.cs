@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Animation.Animators;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -16,9 +13,6 @@ using Avalonia.Skia;
 using Avalonia.Threading;
 using MapRender;
 using SkiaSharp;
-using Bitmap = Avalonia.Media.Imaging.Bitmap;
-using Image = Avalonia.Controls.Image;
-using Point = Avalonia.Point;
 
 namespace Direct2DMap;
 
@@ -30,33 +24,15 @@ public class Map : Control
     private RenderTargetBitmap _rt;
     private ISkiaDrawingContextImpl _skContext;
 
-    private static readonly DirectoryInfo CacheDir = new("Cache");
-    private static readonly Dictionary<string, SKImage> CachedImages = new();
-
-    private static readonly HttpClient HttpClient = new();
-
     private readonly SemaphoreSlim _updateSemaphore = new(1, 1);
 
     private MapPoint _centerPoint = new MapPoint(37.617187, 55.755508);
     private int _zoom = 8;
 
-    private bool _isDragging = false;
+    private bool _isDragging;
     private Point _prevDragPos;
 
-    private Rect _mapBounds;
-    private SKPaint _whitePaint;
-
-    static Map()
-    {
-        CacheDir.Create();
-        foreach (var fileName in Directory.GetFiles(CacheDir.FullName))
-        {
-            string name = Path.GetFileName(fileName);
-            var image = SkHelper.ToSkImage(File.OpenRead(fileName));
-
-            CachedImages.Add(name, image);
-        }
-    }
+    private readonly SKPaint _whitePaint;
 
     public Map()
     {
@@ -69,15 +45,17 @@ public class Map : Control
 
         _whitePaint = new SKPaint();
         _whitePaint.Color = SKColors.White;
+
+        MapCache.OnDownloadFinished += async () => await RenderMap();
     }
 
-    private void PointerWheelHandler(object sender, PointerWheelEventArgs e)
+    private async void PointerWheelHandler(object sender, PointerWheelEventArgs e)
     {
         int delta = (int)e.Delta.Y;
 
         _zoom += delta;
 
-        RenderMap();
+        await RenderMap();
     }
 
     private async void ResizeMap(Map map, AvaloniaPropertyChangedEventArgs args)
@@ -171,8 +149,6 @@ public class Map : Control
         int xNum = (int)Math.Ceiling((width + xOffset) / 256.0);
         int yNum = (int)Math.Ceiling((height + yOffset) / 256.0);
 
-        _mapBounds = new Rect(xs, ys, width / 256.0, height / 256.0);
-
         List<Task> getImageTask = new();
         for (int x = 0; x < xNum; x++)
         {
@@ -195,7 +171,7 @@ public class Map : Control
                     int yIndex = yTile.Wrap(zoomNumTiles);
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        if (!TryGetImageFromCache(xIndex, yIndex, _zoom, out var image))
+                        if (!MapCache.TryGetImage(xIndex, yIndex, _zoom, out var image))
                         {
                             _skContext.SkCanvas.DrawRect(xPos, yPos, 256, 256, _whitePaint);
                         }
@@ -219,89 +195,5 @@ public class Map : Control
         }
 
         await Task.WhenAll(getImageTask);
-    }
-
-    private static readonly object CacheLock = new();
-
-    private bool TryGetImageFromCache(int x, int y, int zoom, out SKImage image)
-    {
-        image = null;
-
-        string name = GetTileFileName(x, y, zoom);
-        lock (CacheLock)
-        {
-            if (CachedImages.ContainsKey(name))
-            {
-                image = CachedImages[name];
-                return true;
-            }
-        }
-
-        RequestTile(x, y, zoom, () => RenderMap());
-        return false;
-    }
-
-    private static string GetTileFileName(int x, int y, int zoom)
-    {
-        return $"{x}_{y}_{zoom}.png";
-    }
-
-    private static readonly HashSet<string> PendingDownloads = new();
-    private static readonly object PendingDownloadsLock = new();
-
-    private static async void RequestTile(int x, int y, int zoom, Action onFinished)
-    {
-        string name = GetTileFileName(x, y, zoom);
-
-        lock (PendingDownloadsLock)
-        {
-            if (PendingDownloads.Contains(name))
-                return;
-
-            PendingDownloads.Add(name);
-        }
-
-        // We have to set user agent because otherwise we will get 403 http error
-        // https://stackoverflow.com/questions/46604840/403-response-with-httpclient-but-not-with-browser
-        var url = $"https://tile.openstreetmap.org/{zoom}/{x}/{y}.png";
-        var request = new HttpRequestMessage(HttpMethod.Get, url)
-        {
-            Headers =
-            {
-                {
-                    "User-Agent",
-                    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) " +
-                    "Chrome/23.0.1271.95 Safari/537.11"
-                }
-            }
-        };
-
-        // May throw on downloading and converting to SKImage
-        try
-        {
-            var result = await HttpClient.SendAsync(request);
-            var contentStream = await result.Content.ReadAsStreamAsync();
-
-            // // Save to disk
-            // string fileName = $"{CacheDir.FullName}/{name}";
-            // await File.WriteAllBytesAsync(fileName, await result.Content.ReadAsByteArrayAsync());
-
-            var image = SkHelper.ToSkImage(contentStream);
-            lock (CacheLock)
-            {
-                CachedImages.Add(name, image);
-            }
-
-            onFinished();
-        }
-        catch (Exception e)
-        {
-            // ignored
-        }
-
-        lock (PendingDownloadsLock)
-        {
-            PendingDownloads.Remove(name);
-        }
     }
 }
