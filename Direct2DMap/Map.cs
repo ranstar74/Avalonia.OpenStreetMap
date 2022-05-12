@@ -31,9 +31,28 @@ public class Map : Control
 
     private readonly SemaphoreSlim _updateSemaphore = new(1, 1);
 
-    private MapPoint _centerPoint = new MapPoint(37.617187, 55.755508);
-    private int _zoom = 8;
+    public MapPoint Center
+    {
+        get => _center;
+        set
+        {
+            _center = value;
+            OnZoomOrCenterChanged();
+        }
+    }
 
+    public int Zoom
+    {
+        get => _zoom;
+        set
+        {
+            _zoom = Math.Clamp(value, 3, 19);
+            OnZoomOrCenterChanged();
+        }
+    }
+
+    private MapPoint _center;
+    private int _zoom;
     private bool _isDragging;
     private Point _prevDragPos;
 
@@ -41,6 +60,8 @@ public class Map : Control
 
     public Map()
     {
+        Zoom = 3;
+
         BoundsProperty.Changed.AddClassHandler<Map>(ResizeMap);
 
         PointerPressed += PointerPressedHandler;
@@ -52,7 +73,14 @@ public class Map : Control
         _whitePaint.Color = SKColors.White;
 
         MapCache.OnDownloadFinished += async () => await RenderMap();
-        
+    }
+
+    private async void OnZoomOrCenterChanged()
+    {
+        if (_skContext == null)
+            return;
+
+        await RenderMap();
     }
 
     private async void PointerWheelHandler(object sender, PointerWheelEventArgs e)
@@ -63,7 +91,7 @@ public class Map : Control
         var cursorPos = e.GetPosition(this);
         var worldPos = ScreenPointToWorldPoint(cursorPos);
 
-        _zoom += delta;
+        Zoom += delta;
 
         // Get cursor position after applying zoom
         var cursorPosNew = WorldPointToScreenPoint(worldPos);
@@ -72,30 +100,30 @@ public class Map : Control
         var posDelta = cursorPosNew - cursorPos;
 
         // Convert both center map position and distance to tile coordinate to avoid projection
-        var centerTile = WorldPointToTilePoint(_centerPoint);
+        var centerTile = WorldPointToTilePoint(Center);
         var posDeltaTile = ScreenPointToTilePoint(posDelta);
 
-        _centerPoint = TilePointToWorldPoint(centerTile + posDeltaTile);
+        Center = TilePointToWorldPoint(centerTile + posDeltaTile);
 
         await RenderMap();
     }
 
     public MapPoint TilePointToWorldPoint(Point point)
     {
-        return MapHelper.TileToWorldPos(point, _zoom);
+        return MapHelper.TileToWorldPos(point, Zoom);
     }
 
     public MapPoint ScreenPointToWorldPoint(Point point)
     {
         var tilePos = PixelToTiles(point - new Point(RenderWidth / 2.0, RenderHeight / 2.0));
-        var centerTilePos = MapHelper.WorldToTilePos(_centerPoint, _zoom);
+        var centerTilePos = MapHelper.WorldToTilePos(Center, Zoom);
 
         return TilePointToWorldPoint(centerTilePos + tilePos);
     }
 
     public Point WorldPointToTilePoint(MapPoint point)
     {
-        return MapHelper.WorldToTilePos(point, _zoom);
+        return MapHelper.WorldToTilePos(point, Zoom);
     }
 
     public static Point ScreenPointToTilePoint(Point point)
@@ -110,7 +138,7 @@ public class Map : Control
 
     public Point WorldPointToScreenPoint(MapPoint mapPoint)
     {
-        var centerTilePos = WorldPointToTilePoint(_centerPoint);
+        var centerTilePos = WorldPointToTilePoint(Center);
         var pointTilePos = WorldPointToTilePoint(mapPoint);
 
         // Shift point to local space
@@ -141,10 +169,10 @@ public class Map : Control
 
         var posDelta = PixelToTiles(pos) - PixelToTiles(_prevDragPos);
 
-        var centerPointTile = MapHelper.WorldToTilePos(_centerPoint, _zoom);
+        var centerPointTile = MapHelper.WorldToTilePos(Center, Zoom);
         centerPointTile -= posDelta;
 
-        _centerPoint = MapHelper.TileToWorldPos(centerPointTile, _zoom);
+        Center = MapHelper.TileToWorldPos(centerPointTile, Zoom);
         _prevDragPos = pos;
 
         await RenderMap();
@@ -155,7 +183,7 @@ public class Map : Control
         _isDragging = false;
     }
 
-    private async void PointerPressedHandler(object sender, PointerPressedEventArgs e)
+    private void PointerPressedHandler(object sender, PointerPressedEventArgs e)
     {
         _prevDragPos = e.GetPosition(this);
         _isDragging = true;
@@ -192,10 +220,10 @@ public class Map : Control
 
     public async Task RenderMap(int width, int height, CancellationTokenSource token)
     {
-        var center = _centerPoint;
+        var center = Center;
 
-        int zoomNumTiles = MapHelper.GetNumberOfTilesAtZoom(_zoom);
-        var centerTilePoint = MapHelper.WorldToTilePos(center, _zoom);
+        int zoomNumTiles = MapHelper.GetNumberOfTilesAtZoom(Zoom);
+        var centerTilePoint = MapHelper.WorldToTilePos(center, Zoom);
 
         // xStart = floor(center.X - width / 512)
         // yStart = floor(center.Y - height / 512)
@@ -234,7 +262,7 @@ public class Map : Control
                     int yIndex = yTile.Wrap(zoomNumTiles);
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        if (!MapCache.TryGetImage(xIndex, yIndex, _zoom, out var image))
+                        if (!MapCache.TryGetImage(xIndex, yIndex, Zoom, out var image))
                         {
                             _skContext.SkCanvas.DrawRect(xPos, yPos, 256, 256, _whitePaint);
                         }

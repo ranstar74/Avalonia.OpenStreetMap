@@ -1,4 +1,8 @@
-﻿namespace MapRender;
+﻿using System;
+using System.Globalization;
+using Avalonia.Utilities;
+
+namespace MapRender;
 
 public class MapPoint
 {
@@ -19,4 +23,30 @@ public class MapPoint
         Longitude = lon;
         Latitude = lat;
     }
+    
+        /// <summary>
+        /// Parses Map Point from a string.
+        /// </summary>
+        /// <param name="s">A string with coordinates, for i.e. "50.5923, 84.5921".</param>
+        /// <returns>Converted Map Point.</returns>
+        /// <exception cref="FormatException">Throws if given string didn't contain valid coordinates.</exception>
+        public static MapPoint Parse(string s)
+        {
+            const string exceptionMessage = "Invalid Coordinates.";
+    
+            using var tokenizer = new StringTokenizer(s, CultureInfo.InvariantCulture, exceptionMessage);
+    
+            if (!tokenizer.TryReadDouble(out var lon)) 
+                throw new FormatException(exceptionMessage);
+            
+            if (!tokenizer.TryReadDouble(out var lat)) 
+                throw new FormatException(exceptionMessage);
+    
+            return new MapPoint(lon, lat);
+        }
+    
+        public override string ToString()
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}", Longitude, Latitude);
+        }
 }

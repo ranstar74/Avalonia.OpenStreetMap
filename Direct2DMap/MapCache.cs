@@ -99,7 +99,7 @@ public static class MapCache
 
             OnDownloadFinished?.Invoke();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }
