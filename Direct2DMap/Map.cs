@@ -5,13 +5,18 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Media.Transformation;
 using Avalonia.Skia;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using MapRender;
+using Microsoft.Win32.SafeHandles;
 using SkiaSharp;
 
 namespace Direct2DMap;
@@ -47,15 +52,73 @@ public class Map : Control
         _whitePaint.Color = SKColors.White;
 
         MapCache.OnDownloadFinished += async () => await RenderMap();
+        
     }
 
     private async void PointerWheelHandler(object sender, PointerWheelEventArgs e)
     {
         int delta = (int)e.Delta.Y;
 
+        // Get world position cursor points to
+        var cursorPos = e.GetPosition(this);
+        var worldPos = ScreenPointToWorldPoint(cursorPos);
+
         _zoom += delta;
 
+        // Get cursor position after applying zoom
+        var cursorPosNew = WorldPointToScreenPoint(worldPos);
+
+        //Get distance we need to offset map on
+        var posDelta = cursorPosNew - cursorPos;
+
+        // Convert both center map position and distance to tile coordinate to avoid projection
+        var centerTile = WorldPointToTilePoint(_centerPoint);
+        var posDeltaTile = ScreenPointToTilePoint(posDelta);
+
+        _centerPoint = TilePointToWorldPoint(centerTile + posDeltaTile);
+
         await RenderMap();
+    }
+
+    public MapPoint TilePointToWorldPoint(Point point)
+    {
+        return MapHelper.TileToWorldPos(point, _zoom);
+    }
+
+    public MapPoint ScreenPointToWorldPoint(Point point)
+    {
+        var tilePos = PixelToTiles(point - new Point(RenderWidth / 2.0, RenderHeight / 2.0));
+        var centerTilePos = MapHelper.WorldToTilePos(_centerPoint, _zoom);
+
+        return TilePointToWorldPoint(centerTilePos + tilePos);
+    }
+
+    public Point WorldPointToTilePoint(MapPoint point)
+    {
+        return MapHelper.WorldToTilePos(point, _zoom);
+    }
+
+    public static Point ScreenPointToTilePoint(Point point)
+    {
+        return point / 256;
+    }
+
+    public static Point TilePointToScreenPoint(Point point)
+    {
+        return point * 256;
+    }
+
+    public Point WorldPointToScreenPoint(MapPoint mapPoint)
+    {
+        var centerTilePos = WorldPointToTilePoint(_centerPoint);
+        var pointTilePos = WorldPointToTilePoint(mapPoint);
+
+        // Shift point to local space
+        var pointTileLocal = pointTilePos - new Point(
+            centerTilePos.X - RenderWidth / 512.0,
+            centerTilePos.Y - RenderHeight / 512.0);
+
+        return TilePointToScreenPoint(pointTileLocal);
     }
 
     private async void ResizeMap(Map map, AvaloniaPropertyChangedEventArgs args)
