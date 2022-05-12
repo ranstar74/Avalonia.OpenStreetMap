@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Drawing;
+using Avalonia;
 
-namespace MapRender;
+namespace Direct2DMap.Control.Map;
 
 public static class MapHelper
 {
@@ -16,17 +16,17 @@ public static class MapHelper
         return (int)Math.Pow(2, zoom);
     }
 
-    public static MapTilePoint WorldToTilePos(MapPoint point, int zoom)
+    public static Point WorldToTilePos(MapPoint point, int zoom)
     {
         double x = (point.Longitude + 180.0) / 360.0 * (1 << zoom);
         double y = (
             1.0 - Math.Log(Math.Tan(point.Latitude * Math.PI / 180.0) +
                            1.0 / Math.Cos(point.Latitude * Math.PI / 180.0)) / Math.PI) / 2.0 * (1 << zoom);
 
-        return new MapTilePoint(x, y);
+        return new Point(x, y);
     }
 
-    public static MapPoint TileToWorldPos(MapTilePoint point, double zoom)
+    public static MapPoint TileToWorldPos(Point point, double zoom)
     {
         int roundZoom = (int)Math.Floor(zoom);
 
