@@ -29,6 +29,7 @@ public class MapLayer : global::Avalonia.Controls.Control
         {
             _center = value;
             OnZoomOrCenterChanged();
+            OnCenterChanged?.Invoke();
         }
     }
 
@@ -39,8 +40,15 @@ public class MapLayer : global::Avalonia.Controls.Control
         {
             _zoom = Math.Clamp(value, 3, 19);
             OnZoomOrCenterChanged();
+            OnZoomChanged?.Invoke();
         }
     }
+
+    public delegate void OnZoomChangedEvent();
+    public delegate void OnCenterChangedEvent();
+
+    public event OnZoomChangedEvent OnZoomChanged;
+    public event OnCenterChangedEvent OnCenterChanged;
     
     private MapPoint _center;
     private int _zoom;
@@ -205,6 +213,11 @@ public class MapLayer : global::Avalonia.Controls.Control
 
     public override void Render(DrawingContext context)
     {
+        if (_rt is null)
+        {
+            return;
+        }
+        
         context.DrawImage(_rt,
             new Rect(0, 0, _rt.PixelSize.Width, _rt.PixelSize.Height),
             new Rect(0, 0, Bounds.Width, Bounds.Height));

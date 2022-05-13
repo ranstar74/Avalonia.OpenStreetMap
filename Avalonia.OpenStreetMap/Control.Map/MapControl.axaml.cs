@@ -3,12 +3,8 @@ using Avalonia.Controls.Primitives;
 
 namespace Avalonia.OpenStreetMap.Control.Map;
 
-public class MapControl : TemplatedPanel
+public class MapControl : TemplatedControl
 {
-    private Button _partZoomInButton;
-    private Button _partZoomOutButton;
-    private MapLayer _partMapLayer;
-
     public int Zoom
     {
         get => GetValue(ZoomProperty);
@@ -20,51 +16,24 @@ public class MapControl : TemplatedPanel
         get => GetValue(CenterProperty);
         set => SetValue(CenterProperty, value);
     }
-
-    public static MapPoint GetMapPosition(IControl element)
-    {
-        return element.GetValue(MapPositionProperty);
-    }
-
-    public static void SetMapPosition(IControl element, MapPoint position)
-    {
-        element.SetValue(MapPositionProperty, position);
-    }
-
-    public static readonly AttachedProperty<MapPoint> MapPositionProperty =
-        AvaloniaProperty.RegisterAttached<MapControl, MapPoint>(
-            "MapPosition", typeof(MapControl), MapPoint.Zero);
-
+    
+    public MapLayer MapLayer => _partMapLayer;
+    
     public static readonly StyledProperty<int> ZoomProperty =
         AvaloniaProperty.Register<MapControl, int>(nameof(Zoom));
 
     public static readonly StyledProperty<MapPoint> CenterProperty =
         AvaloniaProperty.Register<MapControl, MapPoint>(nameof(Center));
-
-    static MapControl()
-    {
-        AffectsArrange<MapControl>(MapPositionProperty);
-    }
+    
+    private Button _partZoomInButton;
+    private Button _partZoomOutButton;
+    private MapLayer _partMapLayer;
 
     public MapControl()
     {
+        
     }
-
-    protected override Size ArrangeOverride(Size finalSize)
-    {
-        if (_partMapLayer == null)
-            return finalSize;
-
-        foreach (var child in Children)
-        {
-            var pos = _partMapLayer.WorldPointToScreenPoint(GetMapPosition(child));
-
-            child.Arrange(new Rect(pos, child.DesiredSize));
-        }
-
-        return finalSize;
-    }
-
+    
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _partMapLayer = e.NameScope.Find<MapLayer>("PART_MapLayer");
@@ -74,6 +43,9 @@ public class MapControl : TemplatedPanel
         _partZoomInButton.Click += (_, __) => _partMapLayer.Zoom++;
         _partZoomOutButton.Click += (_, __) => _partMapLayer.Zoom--;
 
+        _partMapLayer.OnCenterChanged += () => Center = _partMapLayer.Center;
+        _partMapLayer.OnZoomChanged += () => Zoom = _partMapLayer.Zoom;
+        
         InvalidateArrange();
     }
 }

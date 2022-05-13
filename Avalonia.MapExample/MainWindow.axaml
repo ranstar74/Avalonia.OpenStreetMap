@@ -6,12 +6,15 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaMapExample.MainWindow"
         Title="Avalonia.MapExample">
-    <!-- <map:MapControl Zoom="3" -->
-    <!--                 Center="37.617627, 55.755829"> -->
-    <!--     <Button map:MapControl.MapPosition="37.617627, 55.755829"/> -->
-    <!-- </map:MapControl> -->
-    <map:TemplatedPanel>
-        <!-- <map:MapControl/> -->
-        <Button/>
-    </map:TemplatedPanel>
+    <Panel>
+        <map:MapControl x:Name="MapControl"
+                        Zoom="3"
+                        Center="37.617627, 55.755829" />
+        <map:MapPanel MapContext="{Binding #MapControl}">
+            <Rectangle map:MapPanel.MapPosition="37.617627, 55.755829"
+                       Fill="Red"
+                       Width="50"
+                       Height="50"/>
+        </map:MapPanel>
+    </Panel>
 </Window>

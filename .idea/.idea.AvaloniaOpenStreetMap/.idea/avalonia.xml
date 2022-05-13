@@ -6,6 +6,7 @@
         <entry key="Avalonia.MapExample/App.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
         <entry key="Avalonia.MapExample/MainWindow.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
         <entry key="Avalonia.OpenStreetMap/Control.Map/MapControl.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
+        <entry key="Avalonia.OpenStreetMap/Control.Map/TemplatedPanel.axaml" value="Avalonia.MapExample/Avalonia.MapExample.csproj" />
         <entry key="AvaloniaMapExample/App.axaml" value="AvaloniaMapExample/AvaloniaMapExample.csproj" />
         <entry key="AvaloniaMapExample/MainWindow.axaml" value="AvaloniaMapExample/AvaloniaMapExample.csproj" />
         <entry key="AvaloniaOpenStreetMap/App.axaml" value="AvaloniaOpenStreetMap/AvaloniaOpenStreetMap.csproj" />
