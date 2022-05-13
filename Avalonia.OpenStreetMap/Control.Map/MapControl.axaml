@@ -5,6 +5,8 @@
         <map:MapControl />
     </Design.PreviewWith>
 
+    <StyleInclude Source="avares://Avalonia.OpenStreetMap/Control.Map/TemplatedPanel.axaml" />
+
     <Style Selector="map|MapControl">
         <!-- Set Defaults -->
         <Setter Property="Template">
