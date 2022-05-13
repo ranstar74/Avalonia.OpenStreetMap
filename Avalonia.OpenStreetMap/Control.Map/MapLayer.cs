@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -40,7 +41,7 @@ public class MapLayer : global::Avalonia.Controls.Control
             OnZoomOrCenterChanged();
         }
     }
-
+    
     private MapPoint _center;
     private int _zoom;
     private bool _isDragging;
@@ -65,7 +66,7 @@ public class MapLayer : global::Avalonia.Controls.Control
 
         MapCache.OnDownloadFinished += async () => await RenderMap();
     }
-
+    
     private async void OnZoomOrCenterChanged()
     {
         if (_skContext == null)
