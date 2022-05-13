@@ -36,6 +36,8 @@
                             </StackPanel>
                         </Border>
                     </Panel>
+                    
+                    <map:MapOverlay x:Name="PART_MapOverlay"/>
                 </Panel>
             </ControlTemplate>
         </Setter>

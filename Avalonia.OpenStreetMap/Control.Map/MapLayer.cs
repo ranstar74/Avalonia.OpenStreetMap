@@ -50,8 +50,8 @@ public class MapLayer : global::Avalonia.Controls.Control
     public event OnZoomChangedEvent OnZoomChanged;
     public event OnCenterChangedEvent OnCenterChanged;
     
-    private MapPoint _center;
-    private int _zoom;
+    private MapPoint _center = MapPoint.Zero;
+    private int _zoom = 3;
     private bool _isDragging;
     private Point _prevDragPos;
 
@@ -59,9 +59,6 @@ public class MapLayer : global::Avalonia.Controls.Control
 
     public MapLayer()
     {
-        Zoom = 3;
-        Center = MapPoint.Zero;
-
         BoundsProperty.Changed.AddClassHandler<MapLayer>(ResizeMap);
 
         PointerPressed += PointerPressedHandler;

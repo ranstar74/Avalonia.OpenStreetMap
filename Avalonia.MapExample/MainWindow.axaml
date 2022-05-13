@@ -3,18 +3,29 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:map="clr-namespace:Avalonia.OpenStreetMap.Control.Map;assembly=Avalonia.OpenStreetMap"
+        xmlns:shapes="clr-namespace:Avalonia.OpenStreetMap.Control.Map.Shapes;assembly=Avalonia.OpenStreetMap"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaMapExample.MainWindow"
         Title="Avalonia.MapExample">
     <Panel>
         <map:MapControl x:Name="MapControl"
-                        Zoom="3"
-                        Center="37.617627, 55.755829" />
+                        Zoom="13"
+                        Center="37.805799, 55.763339">
+            <map:MapControl.Shapes>
+                <shapes:MapLine StartPoint="37.756629, 55.758901"
+                                EndPoint="37.820888, 55.772044">
+                    <shapes:MapLine.Pen>
+                        <Pen Brush="DarkRed"
+                             Thickness="5.0"/>
+                    </shapes:MapLine.Pen>
+                </shapes:MapLine>
+            </map:MapControl.Shapes>
+        </map:MapControl>
         <map:MapPanel MapContext="{Binding #MapControl}">
-            <Rectangle map:MapPanel.MapPosition="37.617627, 55.755829"
+            <Rectangle map:MapPanel.MapPosition="0, 0"
                        Fill="Red"
                        Width="50"
-                       Height="50"/>
+                       Height="50" />
         </map:MapPanel>
     </Panel>
 </Window>
