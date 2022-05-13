@@ -4,7 +4,7 @@
     <Design.PreviewWith>
         <map:MapControl />
     </Design.PreviewWith>
-
+    
     <Style Selector="map|MapControl">
         <!-- Set Defaults -->
         <Setter Property="Template">
@@ -36,6 +36,8 @@
                             </StackPanel>
                         </Border>
                     </Panel>
+                    
+                    <map:MapOverlay x:Name="PART_MapOverlay"/>
                 </Panel>
             </ControlTemplate>
         </Setter>

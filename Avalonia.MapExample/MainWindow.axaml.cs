@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 
 namespace AvaloniaMapExample
@@ -7,6 +8,9 @@ namespace AvaloniaMapExample
         public MainWindow()
         {
             InitializeComponent();
+#if DEBUG
+            this.AttachDevTools();
+#endif
         }
     }
 }

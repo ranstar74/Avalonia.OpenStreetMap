@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -28,6 +29,7 @@ public class MapLayer : global::Avalonia.Controls.Control
         {
             _center = value;
             OnZoomOrCenterChanged();
+            OnCenterChanged?.Invoke();
         }
     }
 
@@ -38,11 +40,18 @@ public class MapLayer : global::Avalonia.Controls.Control
         {
             _zoom = Math.Clamp(value, 3, 19);
             OnZoomOrCenterChanged();
+            OnZoomChanged?.Invoke();
         }
     }
 
-    private MapPoint _center;
-    private int _zoom;
+    public delegate void OnZoomChangedEvent();
+    public delegate void OnCenterChangedEvent();
+
+    public event OnZoomChangedEvent OnZoomChanged;
+    public event OnCenterChangedEvent OnCenterChanged;
+    
+    private MapPoint _center = MapPoint.Zero;
+    private int _zoom = 3;
     private bool _isDragging;
     private Point _prevDragPos;
 
@@ -50,9 +59,6 @@ public class MapLayer : global::Avalonia.Controls.Control
 
     public MapLayer()
     {
-        Zoom = 3;
-        Center = MapPoint.Zero;
-
         BoundsProperty.Changed.AddClassHandler<MapLayer>(ResizeMap);
 
         PointerPressed += PointerPressedHandler;
@@ -65,7 +71,7 @@ public class MapLayer : global::Avalonia.Controls.Control
 
         MapCache.OnDownloadFinished += async () => await RenderMap();
     }
-
+    
     private async void OnZoomOrCenterChanged()
     {
         if (_skContext == null)
@@ -204,6 +210,11 @@ public class MapLayer : global::Avalonia.Controls.Control
 
     public override void Render(DrawingContext context)
     {
+        if (_rt is null)
+        {
+            return;
+        }
+        
         context.DrawImage(_rt,
             new Rect(0, 0, _rt.PixelSize.Width, _rt.PixelSize.Height),
             new Rect(0, 0, Bounds.Width, Bounds.Height));
