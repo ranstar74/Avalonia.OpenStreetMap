@@ -33,7 +33,7 @@ public class MapControl : TemplatedControl
     
     public static readonly StyledProperty<IEnumerable<MapShape>> ShapesProperty =
         AvaloniaProperty.Register<MapControl, IEnumerable<MapShape>>(
-            nameof(Shapes));
+            nameof(Shapes), new List<MapShape>());
 
     public static readonly StyledProperty<int> ZoomProperty =
         AvaloniaProperty.Register<MapControl, int>(nameof(Zoom));
