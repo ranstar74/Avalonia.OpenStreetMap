@@ -1,4 +1,4 @@
-﻿using Avalonia.Collections;
+﻿using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.OpenStreetMap.Control.Map.Shapes;
@@ -7,7 +7,13 @@ namespace Avalonia.OpenStreetMap.Control.Map;
 
 public class MapControl : TemplatedControl
 {
-    public AvaloniaList<MapShape> Shapes { get; set; } = new();
+    // public List<MapShape> Shapes { get; set; } = new();
+
+    public IEnumerable<MapShape> Shapes
+    {
+        get => GetValue(ShapesProperty);
+        set => SetValue(ShapesProperty, value);
+    }
 
     public int Zoom
     {
@@ -24,6 +30,10 @@ public class MapControl : TemplatedControl
     public MapLayer MapLayer { get; private set; }
 
     public MapOverlay MapOverlay { get; private set; }
+    
+    public static readonly StyledProperty<IEnumerable<MapShape>> ShapesProperty =
+        AvaloniaProperty.Register<MapControl, IEnumerable<MapShape>>(
+            nameof(Shapes), new List<MapShape>());
 
     public static readonly StyledProperty<int> ZoomProperty =
         AvaloniaProperty.Register<MapControl, int>(nameof(Zoom));
@@ -36,7 +46,12 @@ public class MapControl : TemplatedControl
 
     public MapControl()
     {
-        
+        ShapesProperty.Changed.AddClassHandler<MapControl>(Action);
+    }
+
+    private void Action(MapControl arg1, AvaloniaPropertyChangedEventArgs arg2)
+    {
+        MapOverlay?.InvalidateVisual();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
