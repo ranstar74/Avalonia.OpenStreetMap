@@ -23,6 +23,7 @@
         </map:MapControl>
         <map:MapPanel MapContext="{Binding #MapControl}">
             <Rectangle map:MapPanel.MapPosition="0, 0"
+                       map:MapPanel.PinPoint="0%, 0%"
                        Fill="Red"
                        Width="50"
                        Height="50" />

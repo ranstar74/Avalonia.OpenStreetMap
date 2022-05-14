@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 
 namespace Avalonia.OpenStreetMap.Control.Map;
 
@@ -38,10 +39,24 @@ public class MapPanel : Panel
     {
         element.SetValue(MapPositionProperty, position);
     }
+    
+    public static RelativePoint GetPinPoint(IControl element)
+    {
+        return element.GetValue(PinPointProperty);
+    }
+
+    public static void SetPinPoint(IControl element, RelativePoint position)
+    {
+        element.SetValue(PinPointProperty, position);
+    }
 
     public static readonly AttachedProperty<MapPoint> MapPositionProperty =
         AvaloniaProperty.RegisterAttached<MapControl, MapPoint>(
             "MapPosition", typeof(MapControl), MapPoint.Zero);
+    
+    public static readonly AttachedProperty<RelativePoint> PinPointProperty =
+        AvaloniaProperty.RegisterAttached<MapControl, RelativePoint>(
+            "PinPoint", typeof(MapControl), RelativePoint.TopLeft);
 
     private MapControl _mapContext;
 
@@ -62,9 +77,18 @@ public class MapPanel : Panel
 
         foreach (var child in Children)
         {
-            var pos = _mapContext.MapLayer.WorldPointToScreenPoint(GetMapPosition(child));
+            // We assume that if parent is ItemsPresenter then item is generated using ItemsControl,
+            // then we need to get actual child from ContentPresenter.Child
+            var actualChild = Parent is ItemsPresenter ? (child as ContentPresenter)!.Child : child;
 
-            child.Arrange(new Rect(pos, child.DesiredSize));
+            var pos = _mapContext.MapLayer.WorldPointToScreenPoint(GetMapPosition(actualChild));
+
+            // Shift position to match pin point
+            var pinPoint = GetPinPoint(actualChild);
+            var pixelOffset = pinPoint.ToPixels(actualChild.Bounds.Size);
+            pos -= pixelOffset;
+            
+            actualChild.Arrange(new Rect(pos, actualChild.DesiredSize));
         }
 
         return finalSize;
